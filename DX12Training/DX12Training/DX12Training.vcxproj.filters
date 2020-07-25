@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="リソース ファイル">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Engine">
+      <UniqueIdentifier>{81cb36ba-5fa7-4517-b6c2-3539f11f680b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Engine\Window">
+      <UniqueIdentifier>{6bd71c32-d93d-4ba1-9b30-4ce4da338723}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Engine">
+      <UniqueIdentifier>{da01e76a-72cd-458d-a8fd-b6b27b28a3ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Engine\Window">
+      <UniqueIdentifier>{374dd721-1714-4fa2-989f-6dafbfb14c9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Engine\System">
+      <UniqueIdentifier>{096d3d33-dfcd-45bf-91b8-96c04a2f4017}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\WinMain.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="source\private\Engine\Window\Window.cpp">
+      <Filter>ソース ファイル\Engine\Window</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\public\Engine\Window\Window.h">
+      <Filter>ヘッダー ファイル\Engine\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="source\public\Engine\System\System.h">
+      <Filter>ヘッダー ファイル\Engine\System</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
