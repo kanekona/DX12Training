@@ -385,3 +385,4 @@ __pycache__/
 *.dgml
 
 #ResourceFile 
+/directx12_samples-master.zip

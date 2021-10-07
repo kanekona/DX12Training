@@ -28,6 +28,12 @@
     <Filter Include="ヘッダー ファイル\Engine\System">
       <UniqueIdentifier>{096d3d33-dfcd-45bf-91b8-96c04a2f4017}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ヘッダー ファイル\Engine\Core">
+      <UniqueIdentifier>{61bea770-1ce1-4cbd-bce7-d07049bc8c48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Engine\Core\Math">
+      <UniqueIdentifier>{86dc1e79-8d23-49fe-a7d3-e2fa770c51d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\WinMain.cpp">
@@ -35,6 +41,12 @@
     </ClCompile>
     <ClCompile Include="source\private\Engine\Window\Window.cpp">
       <Filter>ソース ファイル\Engine\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="source\public\Engine\Core\Math\Vertex.h">
+      <Filter>ヘッダー ファイル\Engine\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="source\public\Engine\Core\Math\Vector2.h">
+      <Filter>ヘッダー ファイル\Engine\Core\Math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -44,5 +56,24 @@
     <ClInclude Include="source\public\Engine\System\System.h">
       <Filter>ヘッダー ファイル\Engine\System</Filter>
     </ClInclude>
+    <ClInclude Include="source\public\Engine\Core\Math\Vector3.h">
+      <Filter>ヘッダー ファイル\Engine\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="source\public\Engine\Core\Math\Color.h">
+      <Filter>ヘッダー ファイル\Engine\Core\Math</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="vertexshader.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="pixelshader.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaderheader.hlsli">
+      <Filter>リソース ファイル</Filter>
+    </None>
   </ItemGroup>
 </Project>
