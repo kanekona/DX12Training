@@ -34,6 +34,12 @@
     <Filter Include="ヘッダー ファイル\Engine\Core\Math">
       <UniqueIdentifier>{86dc1e79-8d23-49fe-a7d3-e2fa770c51d7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ヘッダー ファイル\Engine\Core\Texture">
+      <UniqueIdentifier>{bcc0c1bf-66a5-4dd5-8415-cf24b1bddc61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Engine\Core">
+      <UniqueIdentifier>{63dca447-938e-468f-8992-e0ad08e75360}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\WinMain.cpp">
@@ -47,6 +53,9 @@
     </ClCompile>
     <ClCompile Include="source\public\Engine\Core\Math\Vector2.h">
       <Filter>ヘッダー ファイル\Engine\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="source\private\Engine\Core\Texture\Texture.cpp">
+      <Filter>ソース ファイル\Engine\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -14,6 +14,7 @@
 #include "Engine\Window\Window.h"
 #include "Engine\Core\Math\Vertex.h"
 #include "Engine\Core\Math\Color.h"
+#include "Engine\Core\Texture\Texture.h"
 
 #if _DEBUG
 int main()
@@ -24,12 +25,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// メモリリーク検知
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
+	CoInitialize(nullptr);
+
+	Texture newTex("resources/texture/a1zunko102.png");
+
 #if _DEBUG
 	// D3D12のデバッグ関係処理
 	ID3D12Debug* debugLayer = nullptr;
 	D3D12GetDebugInterface(IID_PPV_ARGS(&debugLayer));
 	debugLayer->EnableDebugLayer();
 	debugLayer->Release();
+	debugLayer = nullptr;
 #endif
 
 	// D3D12のオブジェクトたち
@@ -49,9 +55,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	for (int index = 0; index < 256 * 256; ++index)
 	{
 		texturedata[index].a = 255;
-		texturedata[index].r = rand() % 256;
-		texturedata[index].g = rand() % 256;
-		texturedata[index].b = rand() % 256;
+		texturedata[index].r = 255;
+		texturedata[index].g = 0;
+		texturedata[index].b = 0;
 	}
 
 	// アダプターを列挙するためのオブジェクト
@@ -117,6 +123,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	{
 		return -1;
 	}
+
+#if _DEBUG
+	ID3D12DebugDevice* debugDevice = nullptr;
+
+	result = device->QueryInterface(&debugDevice);
+	if (result != S_OK)
+	{
+		return -1;
+	}
+#endif
 
 	// Windowの生成
 	WNDCLASSEX w = {};
@@ -229,7 +245,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		handle.ptr += index * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-		device->CreateRenderTargetView(backBuffers[index], nullptr, handle);
+		D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+		ZeroMemory(&renderTargetViewDesc, sizeof(D3D12_RENDER_TARGET_VIEW_DESC));
+		renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+		
+		device->CreateRenderTargetView(backBuffers[index], &renderTargetViewDesc, handle);
+		//device->CreateRenderTargetView(backBuffers[index], nullptr, handle);
 	}
 
 	// フェンスの生成
@@ -473,6 +496,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	descResource.Format = DXGI_FORMAT_UNKNOWN;
 	descResource.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	descResource.SampleDesc.Count = 1;
+	descResource.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 	result = device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &descResource, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexBuffer));
 	
@@ -480,6 +504,49 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	{
 		return -1;
 	}
+
+	D3D12_HEAP_PROPERTIES uploadHeapProperty = {};
+	uploadHeapProperty.Type = D3D12_HEAP_TYPE_UPLOAD;
+	uploadHeapProperty.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	uploadHeapProperty.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	uploadHeapProperty.CreationNodeMask = 0;
+	uploadHeapProperty.VisibleNodeMask = 0;
+	
+	D3D12_RESOURCE_DESC uploadResourceDesc = {};
+	uploadResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+	uploadResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	uploadResourceDesc.Width = newTex.GetData()->size() * 4;
+	uploadResourceDesc.Height = 1;
+	uploadResourceDesc.DepthOrArraySize = 1;
+	uploadResourceDesc.MipLevels = 1;
+	uploadResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	uploadResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	uploadResourceDesc.SampleDesc.Count = 1;
+	uploadResourceDesc.SampleDesc.Quality = 0;
+
+	ID3D12Resource* uploadBuffer = nullptr;
+	result = device->CreateCommittedResource(&uploadHeapProperty, D3D12_HEAP_FLAG_NONE, &uploadResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
+
+	if (result != S_OK)
+	{
+		return -1;
+	}
+
+	D3D12_HEAP_PROPERTIES texHeapProperty = {};
+	texHeapProperty.Type = D3D12_HEAP_TYPE_DEFAULT;
+	texHeapProperty.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	texHeapProperty.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	texHeapProperty.CreationNodeMask = 0;
+	texHeapProperty.VisibleNodeMask = 0;
+
+	uploadResourceDesc.Format = newTex.GetFormat();
+	uploadResourceDesc.Width = newTex.GetWidth();
+	uploadResourceDesc.Height = newTex.GetHeight();
+	//uploadResourceDesc.DepthOrArraySize = newTex.GetData()->size();
+	uploadResourceDesc.DepthOrArraySize = 1;
+	uploadResourceDesc.MipLevels = 1;
+	uploadResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	uploadResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 
 	Math::Vertex* mapped = nullptr;
 	//void* mapped = nullptr;
@@ -493,7 +560,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexBuffer->Unmap(0, nullptr);
 
 	descResource.Width = sizeof(indices);
-
 	result = device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &descResource, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&indicesBuffer));
 
 	if (result != S_OK)
@@ -519,9 +585,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	textureHeapProperties.VisibleNodeMask = 0;
 	D3D12_RESOURCE_DESC textureDescResource;
 	ZeroMemory(&textureDescResource, sizeof(D3D12_RESOURCE_DESC));
-	textureDescResource.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	textureDescResource.Width = 256;
-	textureDescResource.Height = 256;
+	textureDescResource.Format = newTex.GetFormat();
+	textureDescResource.Width = newTex.GetWidth();
+	//textureDescResource.Width = 256;
+	textureDescResource.Height = newTex.GetHeight();
+	//textureDescResource.Height = 256;
 	textureDescResource.DepthOrArraySize = 1;
 	textureDescResource.SampleDesc.Count = 1;
 	textureDescResource.SampleDesc.Quality = 0;
@@ -531,22 +599,82 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	textureDescResource.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 	ID3D12Resource* textureBuffer;
-	result = device->CreateCommittedResource(&textureHeapProperties, D3D12_HEAP_FLAG_NONE, &textureDescResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, nullptr, IID_PPV_ARGS(&textureBuffer));
+	//result = device->CreateCommittedResource(&textureHeapProperties, D3D12_HEAP_FLAG_NONE, &textureDescResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, nullptr, IID_PPV_ARGS(&textureBuffer));
+	result = device->CreateCommittedResource(&texHeapProperty, D3D12_HEAP_FLAG_NONE, &uploadResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&textureBuffer));
 
 	if (result != S_OK)
 	{
 		return -1;
 	}
 
-	result = textureBuffer->WriteToSubresource(0, nullptr, texturedata.data(), sizeof(TextureColor) * 256, sizeof(TextureColor) * texturedata.size());
+	//result = textureBuffer->WriteToSubresource(0, nullptr, newTex.GetData()->data(), newTex.GetWidth() * 4 * sizeof(char), newTex.GetData()->size() * 4 * sizeof(char));
+	//result = textureBuffer->WriteToSubresource(0, nullptr, texturedata.data(), sizeof(TextureColor) * 256, texturedata.size() * sizeof(TextureColor));
+	
+	char* mapForImage = nullptr;
+	result = uploadBuffer->Map(0, nullptr, (void**)&mapForImage);
+
+	std::copy_n(newTex.GetData()->data(), newTex.GetData()->size(), mapForImage);
+
+	char* srcAddress = newTex.GetData()->data();
+	unsigned int rowPitch = (newTex.GetRowPitch() + (D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - (newTex.GetRowPitch() % D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)));
+
+	for (unsigned int y = 0; y < newTex.GetHeight(); ++y)
+	{
+		std::copy_n(srcAddress, rowPitch, mapForImage);
+
+		srcAddress += newTex.GetRowPitch();
+		mapForImage += rowPitch;
+	}
+
+	uploadBuffer->Unmap(0, nullptr);
 
 	if (result != S_OK)
 	{
 		return -1;
+	}
+
+	D3D12_TEXTURE_COPY_LOCATION textureCopyLocation = {};
+	textureCopyLocation.pResource = uploadBuffer;
+	textureCopyLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+	textureCopyLocation.PlacedFootprint.Offset = 0;
+	textureCopyLocation.PlacedFootprint.Footprint.Width = newTex.GetWidth();
+	textureCopyLocation.PlacedFootprint.Footprint.Height = newTex.GetHeight();
+	textureCopyLocation.PlacedFootprint.Footprint.Depth = 1;
+	textureCopyLocation.PlacedFootprint.Footprint.RowPitch = (newTex.GetRowPitch() + (D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - (newTex.GetRowPitch() % D3D12_TEXTURE_DATA_PITCH_ALIGNMENT)));
+	textureCopyLocation.PlacedFootprint.Footprint.Format = newTex.GetFormat();
+
+	D3D12_TEXTURE_COPY_LOCATION textureDstCopyLocation = {};
+	textureDstCopyLocation.pResource = textureBuffer;
+	textureDstCopyLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	textureDstCopyLocation.SubresourceIndex = 0;
+
+	cmdList->CopyTextureRegion(&textureDstCopyLocation, 0, 0, 0, &textureCopyLocation, nullptr);
+
+	D3D12_RESOURCE_BARRIER barrierDesc = {};
+	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrierDesc.Transition.pResource = textureBuffer;
+	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+	cmdList->ResourceBarrier(1, &barrierDesc);
+	cmdList->Close();
+
+	ID3D12CommandList* cmdLists[] = { cmdList };
+	cmdQueue->ExecuteCommandLists(1, cmdLists);
+
+	cmdQueue->Signal(fence, fenceVal);
+
+	if (fence->GetCompletedValue() != fenceVal)
+	{
+		result = fence->SetEventOnCompletion(fenceVal, eventHandle);
+		WaitForSingleObject(eventHandle, INFINITE);
 	}
 
 	ID3D12DescriptorHeap* textureDescHeap;
 	D3D12_DESCRIPTOR_HEAP_DESC textureDescHeapDesc;
+	ZeroMemory(&textureDescHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
 	textureDescHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	textureDescHeapDesc.NodeMask = 0;
 	textureDescHeapDesc.NumDescriptors = 1;
@@ -560,17 +688,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	}
 
 	D3D12_VERTEX_BUFFER_VIEW bufferPosition;
+	ZeroMemory(&bufferPosition, sizeof(D3D12_VERTEX_BUFFER_VIEW));
 	bufferPosition.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
 	bufferPosition.StrideInBytes = sizeof(vertices_arrays[0]);
 	bufferPosition.SizeInBytes = sizeof(vertices_arrays);
 
 	D3D12_INDEX_BUFFER_VIEW indexView;
+	ZeroMemory(&indexView, sizeof(D3D12_INDEX_BUFFER_VIEW));
 	indexView.BufferLocation = indicesBuffer->GetGPUVirtualAddress();
 	indexView.Format = DXGI_FORMAT_R16_UINT;
 	indexView.SizeInBytes = sizeof(indices);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-	shaderResourceViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	ZeroMemory(&shaderResourceViewDesc, sizeof(D3D12_SHADER_RESOURCE_VIEW_DESC));
+	shaderResourceViewDesc.Format = newTex.GetFormat();
 	shaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
@@ -676,6 +807,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//mallocで確保したメモリを解放する
 	/*free(vertexShaderPtr);
 	free(pixelShaderPtr);*/
+
+	textureDescHeap->Release();
+	textureDescHeap = nullptr;
+	textureBuffer->Release();
+	textureBuffer = nullptr;
+	indicesBuffer->Release();
+	indicesBuffer = nullptr;
+	vertexBuffer->Release();
+	vertexBuffer = nullptr;
+	pipelineState->Release();
+	pipelineState = nullptr;
+	rootSignature->Release();
+	rootSignature = nullptr;
+	fence->Release();
+	fence = nullptr;
+	rtvHeaps->Release();
+	rtvHeaps = nullptr;
+	swapChain->Release();
+	swapChain = nullptr;
+	cmdQueue->Release();
+	cmdQueue = nullptr;
+	cmdAllocator->Release();
+	cmdAllocator = nullptr;
+	device->Release();
+	device = nullptr;
+	factory->Release();
+	factory = nullptr;
+
+	debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
+	debugDevice->Release();
+
+	CoUninitialize();
 
 	return (int)msg.wParam;
 }
